@@ -7,24 +7,26 @@ class PTTThd(threading.Thread):
         super(PTTThd, self).__init__(daemon=True)
         self.data = data
         self.bot = None
-        self.timeout_sec = 80
+        self.timeout_sec = 70
 
     # intermediary api
 
-    def get_posts(self, board_name, end_idx, num=20):
+    def get_posts(self, board_name, end_idx, quick=False, num=30):
         posts = []
         beg_idx = end_idx - num + 1
+        print(beg_idx, end_idx)
         self.bot.crawl_board(PTT.data_type.crawl_type.BBS,
                              lambda p, posts=posts: posts.append(p),
                              board_name,
                              start_index=beg_idx,
-                             end_index=end_idx)
+                             end_index=end_idx,
+                             query=quick)
 
         ret = []
         for p in posts:
             p.__dict__['push_list'] = [push.__dict__ for push in p.__dict__['push_list']]
             ret.append(p.__dict__)
-        return ret
+        return ret[::-1]
 
     # cmds
 
@@ -70,12 +72,23 @@ class PTTThd(threading.Thread):
         self.data.set_status(True, '')
         self.data.data['fav_b'] = fav_b
 
-    def cmd_get_posts(self):
+    def cmd_get_post(self):
+        b_name = self.data.param['board_name']
+        idx = self.data.param['idx']
+        post = self.bot.get_post(b_name, post_index=idx)
+        post = post.__dict__
+        post['push_list'] = [push.__dict__ for push in post['push_list']]
+
+        self.data.clear_status()
+        self.data.status['status'] = True
+        self.data.data['post'] = post
+
+    def cmd_get_posts(self, quick=False):
         b_name = self.data.param['board_name']
         end_idx = self.data.param['end_idx']
         if end_idx == 'recent':
             end_idx = self.bot.get_newest_index(PTT.data_type.index_type.BBS, board=b_name)
-        posts = self.get_posts(b_name, end_idx)
+        posts = self.get_posts(b_name, end_idx, quick)
 
         self.data.clear_status()
         self.data.status['status'] = True
@@ -105,6 +118,10 @@ class PTTThd(threading.Thread):
                         self.cmd_get_fav_board()
                     elif data.cmd == 'get_posts':
                         self.cmd_get_posts()
+                    elif data.cmd == 'get_post':
+                        self.cmd_get_post()
+                    elif data.cmd == 'get_posts_quick':
+                        self.cmd_get_posts(quick=True)
                     # TODO: add other PTT commands
                     else:
                         data.set_status(False, 'No this command')

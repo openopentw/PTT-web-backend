@@ -4,7 +4,7 @@ import os
 import time
 import threading
 
-from flask import Flask, jsonify, session, request
+from flask import Flask, jsonify, session, request, send_from_directory
 # from flask_session.__init__ import Session
 
 from PTTData import PTTData
@@ -14,7 +14,7 @@ DATA = {
     'available': [],
 }
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../ptt-web-app/build')
 # app.secret_key = b'\x1e<d\x14\xbc\x1a\xb1,\x9ck/}\xb7"\xa0\x00'
 app.secret_key = os.urandom(32)
 # app.config['SESSION_TYPE'] = 'filesystem'
@@ -120,6 +120,29 @@ def get_fav_board():
 
     return {'status': status, 'data': ret_data}
 
+@app.route('/api/get_post', methods=['POST'])
+def get_post():
+    id_ = session['user']
+    print('{} get_post'.format(id_))
+    res = request.get_json()
+
+    DATA['used'][id_].lock.acquire()
+    data = DATA['used'][id_]
+
+    data.cond.acquire()
+    data.set_cmd('get_post',
+                 {'board_name': res['board_name'],
+                  'idx': res['idx']})
+    data.cond.notify()
+    data.cond.wait()
+    status = dict(data.status)
+    ret_data = dict(data.data)
+    data.cond.release()
+
+    data.lock.release()
+
+    return {'status': status, 'data': ret_data}
+
 @app.route('/api/get_posts', methods=['POST'])
 def get_posts():
     id_ = session['user']
@@ -143,10 +166,42 @@ def get_posts():
 
     return {'status': status, 'data': ret_data}
 
+@app.route('/api/get_posts_quick', methods=['POST'])
+def get_posts_quick():
+    id_ = session['user']
+    print('{} get_posts_quick'.format(id_))
+    res = request.get_json()
+
+    DATA['used'][id_].lock.acquire()
+    data = DATA['used'][id_]
+
+    data.cond.acquire()
+    data.set_cmd('get_posts_quick',
+                 {'board_name': res['board_name'],
+                  'end_idx': res['end_idx']})
+    data.cond.notify()
+    data.cond.wait()
+    status = dict(data.status)
+    ret_data = dict(data.data)
+    data.cond.release()
+
+    data.lock.release()
+
+    return {'status': status, 'data': ret_data}
+
 @app.route('/api')
 def api():
     s = 'Hello, API!'
     return jsonify(s)
+
+# STATIC
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != '' and os.path.exists(app.static_folder + '/' + path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 @atexit.register
 def logout_all():
