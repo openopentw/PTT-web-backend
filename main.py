@@ -14,7 +14,7 @@ DATA = {
     'available': [],
 }
 
-app = Flask(__name__, static_folder='../ptt-web-app/build')
+app = Flask(__name__, static_folder='../PTT-web-frontend/build')
 # app.secret_key = b'\x1e<d\x14\xbc\x1a\xb1,\x9ck/}\xb7"\xa0\x00'
 app.secret_key = os.urandom(32)
 # app.config['SESSION_TYPE'] = 'filesystem'
