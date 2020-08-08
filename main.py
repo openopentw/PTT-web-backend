@@ -132,7 +132,7 @@ def get_post():
     data.cond.acquire()
     data.set_cmd('get_post',
                  {'board_name': res['board_name'],
-                  'idx': res['idx']})
+                  'aid': res['aid']})
     data.cond.notify()
     data.cond.wait()
     status = dict(data.status)

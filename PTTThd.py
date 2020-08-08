@@ -74,8 +74,8 @@ class PTTThd(threading.Thread):
 
     def cmd_get_post(self):
         b_name = self.data.param['board_name']
-        idx = self.data.param['idx']
-        post = self.bot.get_post(b_name, post_index=idx)
+        aid = self.data.param['aid']
+        post = self.bot.get_post(b_name, post_aid=aid)
         post = post.__dict__
         post['push_list'] = [push.__dict__ for push in post['push_list']]
 
