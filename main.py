@@ -1,6 +1,7 @@
 import argparse
 import atexit
 import os
+import random
 import time
 import threading
 
@@ -38,14 +39,10 @@ def user():
 def login():
     res = request.get_json()
     print('{} login'.format(res['user']))
-    id_ = res['user']
+    id_ = '{}_{}_{}'.format(res['user'], time.time(), random.randint(0, 10000))
 
     if 'user' in session:
-        # TODO: redirect
         return {'status': False, 'str': 'Already logged in other tabs.'}
-    if id_ in DATA['used']:
-        # TODO: enable multiple user
-        return {'status': False, 'str': 'Already logged in other device.'}
 
     is_new_thread = False
     data = None
