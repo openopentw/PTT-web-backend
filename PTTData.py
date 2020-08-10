@@ -3,8 +3,9 @@ import threading
 from PTTThd import PTTThd
 
 class PTTData():
-    def __init__(self, id_, glb_list):
+    def __init__(self, id_, user, glb_list):
         self.id = id_
+        self.user = user
         self.glb_list = glb_list
 
         self.lock = threading.Lock()
