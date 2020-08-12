@@ -113,6 +113,8 @@ def get_fav_board():
         data.cond.notify()
         data.cond.wait()
         status = dict(data.status)
+        if not status['status'] and data.data.get('need_relogin'):
+            session.pop('user', None)
         ret_data = dict(data.data)
         data.cond.release()
 
@@ -138,6 +140,8 @@ def get_post():
         data.cond.notify()
         data.cond.wait()
         status = dict(data.status)
+        if not status['status'] and data.data.get('need_relogin'):
+            session.pop('user', None)
         ret_data = dict(data.data)
         data.cond.release()
 
@@ -163,6 +167,8 @@ def get_posts():
         data.cond.notify()
         data.cond.wait()
         status = dict(data.status)
+        if not status['status'] and data.data.get('need_relogin'):
+            session.pop('user', None)
         ret_data = dict(data.data)
         data.cond.release()
 
@@ -188,6 +194,8 @@ def get_posts_quick():
         data.cond.notify()
         data.cond.wait()
         status = dict(data.status)
+        if not status['status'] and data.data.get('need_relogin'):
+            session.pop('user', None)
         ret_data = dict(data.data)
         data.cond.release()
 
@@ -213,7 +221,7 @@ def serve(path):
 @atexit.register
 def logout_all():
     print('Logging out all users ...')
-    for id_ in DATA['used'].keys():
+    for id_ in list(DATA['used'].keys()):
         DATA['used'][id_].cond.acquire()
         data = DATA['used'][id_]
         data.cmd = 'logout'

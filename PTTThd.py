@@ -186,7 +186,7 @@ class PTTThd(threading.Thread):
                     except Exception as e:
                         e_str = self.except_handle(e)
                         self.bot.log('[except]' + e_str)
-                        self.data.set_status(False, e_str)
+                        data.set_status(False, e_str)
                         if e in [PTT.exceptions.LoginError,
                                  PTT.exceptions.NoSuchUser,
                                  # PTT.exceptions.RequireLogin,
@@ -196,6 +196,7 @@ class PTTThd(threading.Thread):
                                  PTT.exceptions.WrongIDorPassword,
                                  PTT.exceptions.LoginTooOften,
                                  PTT.exceptions.WrongPassword]:
+                            data['need_relogin'] = True
                             already_logout = True
                             break
                     data.timeout = True
@@ -207,7 +208,7 @@ class PTTThd(threading.Thread):
                     except Exception as e:
                         e_str = self.except_handle(e)
                         self.bot.log('[except]' + e_str)
-                        self.data.set_status(False, e_str)
+                        data.set_status(False, e_str)
                 data.glb_list['used'].pop(data.id, None)
                 data.glb_list['available'].append(data)
                 # data.clear()
