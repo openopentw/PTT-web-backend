@@ -98,6 +98,18 @@ def logout():
     session.pop('user', None)
     return status
 
+@app.route('/api/get_board_list')
+def get_board_list():
+    id_ = get_sess_id()
+    if not id_:
+        return {'status': False, 'str': 'haven\'t logged in'}
+    print('{} get_board_list'.format(id_))
+    Herald_list['used'][id_].lock.acquire()
+    herald = Herald_list['used'][id_]
+    status, data = herald.send_cmd('get_board_list')
+    herald.lock.release()
+    return {'status': status, 'data': data}
+
 @app.route('/api/get_fav_board')
 def get_fav_board():
     id_ = get_sess_id()

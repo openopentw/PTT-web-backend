@@ -103,9 +103,9 @@ class PTTThd(threading.Thread):
                     status['str'] += f'\n註冊單處理順位 {bot.process_picks}'
 
             else:
-                fav_b = bot.get_favourite_board()
-                fav_b = [b.__dict__ for b in fav_b]
-                self.herald.data['fav_b'] = fav_b
+                b_list = bot.get_favourite_board()
+                b_list = [b.__dict__ for b in b_list]
+                self.herald.data['b_list'] = b_list
 
         except PTT.exceptions.LoginError:
             bot.log('登入失敗')
@@ -122,10 +122,15 @@ class PTTThd(threading.Thread):
         self.herald.set_status(True, '')
 
     def cmd_get_fav_board(self):
-        fav_b = self.bot.get_favourite_board()
-        fav_b = [b.__dict__ for b in fav_b]
+        b_list = self.bot.get_favourite_board()
+        b_list = [b.__dict__ for b in b_list]
         self.herald.set_status(True, '')
-        self.herald.data['fav_b'] = fav_b
+        self.herald.data['b_list'] = b_list
+
+    def cmd_get_board_list(self):
+        b_list = self.bot.get_board_list()
+        self.herald.set_status(True, '')
+        self.herald.data['b_list'] = b_list
 
     def cmd_get_post(self):
         b_name = self.herald.param['board_name']
@@ -173,6 +178,8 @@ class PTTThd(threading.Thread):
                     try:
                         if herald.cmd == 'get_fav_board':
                             self.cmd_get_fav_board()
+                        elif herald.cmd == 'get_board_list':
+                            self.cmd_get_board_list()
                         elif herald.cmd == 'get_post':
                             self.cmd_get_post()
                         elif herald.cmd == 'get_posts':
