@@ -3,9 +3,9 @@ import threading
 from PyPtt import PTT
 
 class PTTThd(threading.Thread):
-    def __init__(self, data):
+    def __init__(self, herald):
         super(PTTThd, self).__init__(daemon=True)
-        self.data = data
+        self.herald = herald
         self.bot = None
         self.timeout_sec = 70
 
@@ -87,11 +87,11 @@ class PTTThd(threading.Thread):
 
     def cmd_login(self):
         bot = self.bot
-        self.data.clear_status()
-        status = self.data.status
+        self.herald.clear_status()
+        status = self.herald.status
 
         try:
-            bot.login(self.data.param['user'], self.data.param['pass'])
+            bot.login(self.herald.param['user'], self.herald.param['pass'])
             bot.log('登入成功')
             status['status'] = True
 
@@ -105,88 +105,87 @@ class PTTThd(threading.Thread):
             else:
                 fav_b = bot.get_favourite_board()
                 fav_b = [b.__dict__ for b in fav_b]
-                self.data.data['fav_b'] = fav_b
+                self.herald.data['fav_b'] = fav_b
 
         except PTT.exceptions.LoginError:
             bot.log('登入失敗')
-            self.data.set_status(False, '登入失敗')
+            self.herald.set_status(False, '登入失敗')
         except PTT.exceptions.WrongIDorPassword:
             bot.log('帳號密碼錯誤')
-            self.data.set_status(False, '帳號密碼錯誤')
+            self.herald.set_status(False, '帳號密碼錯誤')
         except PTT.exceptions.LoginTooOften:
             bot.log('請稍等一下再登入')
-            self.data.set_status(False, '請稍等一下再登入')
+            self.herald.set_status(False, '請稍等一下再登入')
 
     def cmd_logout(self):
         self.bot.logout()
-        self.data.set_status(True, '')
+        self.herald.set_status(True, '')
 
     def cmd_get_fav_board(self):
         fav_b = self.bot.get_favourite_board()
         fav_b = [b.__dict__ for b in fav_b]
-        self.data.set_status(True, '')
-        self.data.data['fav_b'] = fav_b
+        self.herald.set_status(True, '')
+        self.herald.data['fav_b'] = fav_b
 
     def cmd_get_post(self):
-        b_name = self.data.param['board_name']
-        aid = self.data.param['aid']
+        b_name = self.herald.param['board_name']
+        aid = self.herald.param['aid']
         post = self.bot.get_post(b_name, post_aid=aid)
         post = post.__dict__
         post['push_list'] = [push.__dict__ for push in post['push_list']]
 
-        self.data.clear_status()
-        self.data.status['status'] = True
-        self.data.data['post'] = post
+        self.herald.clear_status()
+        self.herald.status['status'] = True
+        self.herald.data['post'] = post
 
     def cmd_get_posts(self, quick=False):
-        b_name = self.data.param['board_name']
-        end_idx = self.data.param['end_idx']
+        b_name = self.herald.param['board_name']
+        end_idx = self.herald.param['end_idx']
         if end_idx == 'recent':
             end_idx = self.bot.get_newest_index(PTT.data_type.index_type.BBS, board=b_name)
         posts = self.get_posts(b_name, end_idx, quick)
 
-        self.data.clear_status()
-        self.data.status['status'] = True
-        self.data.data['posts'] = posts
+        self.herald.clear_status()
+        self.herald.status['status'] = True
+        self.herald.data['posts'] = posts
 
     # run
 
     def run(self):
         self.bot = PTT.API()
-        data = self.data
-        cond = data.cond
+        herald = self.herald
+        cond = herald.cond
         cond.acquire()
         while True:
             # try to login
-            while data.cmd != 'login':
-                data.set_status(False, 'Please login first')
+            while herald.cmd != 'login':
+                herald.set_status(False, 'Please login first')
                 cond.notify()
                 cond.wait()
             self.cmd_login()
             cond.notify()
-            if data.status['status']: # if login successfully
-                data.timeout = True
+            if herald.status['status']: # if login successfully
+                herald.timeout = True
                 cond.wait(self.timeout_sec)
 
                 already_logout = False
-                # TODO: add alarm signal to timeout
-                while data.cmd != 'logout' and not data.timeout:
+                while herald.cmd != 'logout' and not herald.timeout:
                     try:
-                        if data.cmd == 'get_fav_board':
+                        if herald.cmd == 'get_fav_board':
                             self.cmd_get_fav_board()
-                        elif data.cmd == 'get_post':
+                        elif herald.cmd == 'get_post':
                             self.cmd_get_post()
-                        elif data.cmd == 'get_posts':
+                        elif herald.cmd == 'get_posts':
                             self.cmd_get_posts()
-                        elif data.cmd == 'get_posts_quick':
+                        elif herald.cmd == 'get_posts_quick':
                             self.cmd_get_posts(quick=True)
                         # add other PTT commands here
                         else:
-                            data.set_status(False, 'No this command')
+                            herald.set_status(False, 'No this command')
                     except Exception as e:
                         e_str = self.except_handle(e)
                         self.bot.log('[except]' + e_str)
-                        data.set_status(False, e_str)
+                        herald.set_status(False, e_str)
                         if e in [PTT.exceptions.LoginError,
                                  PTT.exceptions.NoSuchUser,
                                  # PTT.exceptions.RequireLogin,
@@ -196,10 +195,10 @@ class PTTThd(threading.Thread):
                                  PTT.exceptions.WrongIDorPassword,
                                  PTT.exceptions.LoginTooOften,
                                  PTT.exceptions.WrongPassword]:
-                            data['need_relogin'] = True
+                            herald['need_relogin'] = True
                             already_logout = True
                             break
-                    data.timeout = True
+                    herald.timeout = True
                     cond.notify()
                     cond.wait(self.timeout_sec)
                 if not already_logout:
@@ -208,11 +207,11 @@ class PTTThd(threading.Thread):
                     except Exception as e:
                         e_str = self.except_handle(e)
                         self.bot.log('[except]' + e_str)
-                        data.set_status(False, e_str)
-                data.glb_list['used'].pop(data.id, None)
-                data.glb_list['available'].append(data)
-                # data.clear()
-                cond.notify()
+                        herald.set_status(False, e_str)
+                herald.glb_list['used'].pop(herald.id, None)
+                herald.glb_list['available'].append(herald)
+                if not herald.timeout:
+                    cond.notify()
             # wait for another login
             cond.wait()
         cond.notify()
