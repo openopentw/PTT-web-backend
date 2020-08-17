@@ -8,6 +8,11 @@ class PTTThd(threading.Thread):
         self.herald = herald
         self.bot = None
         self.timeout_sec = 70
+        self.type_str_to_int = {
+            '推': PTT.data_type.push_type.PUSH,
+            '→': PTT.data_type.push_type.ARROW,
+            '噓': PTT.data_type.push_type.BOO,
+        }
 
     # intermediary api
 
@@ -154,6 +159,14 @@ class PTTThd(threading.Thread):
         self.herald.status['status'] = True
         self.herald.data['posts'] = posts
 
+    def cmd_push(self):
+        board = self.herald.param['board']
+        type_ = self.type_str_to_int[self.herald.param['type']]
+        content = self.herald.param['content']
+        aid = self.herald.param['aid']
+        self.bot.push(board, type_, content, post_aid=aid)
+        self.herald.set_status(True, '推文完成')
+
     # run
 
     def run(self):
@@ -186,6 +199,8 @@ class PTTThd(threading.Thread):
                             self.cmd_get_posts()
                         elif herald.cmd == 'get_posts_quick':
                             self.cmd_get_posts(quick=True)
+                        elif herald.cmd == 'push':
+                            self.cmd_push()
                         # add other PTT commands here
                         else:
                             herald.set_status(False, 'No this command')
