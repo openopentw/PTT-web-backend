@@ -122,24 +122,6 @@ def get_fav_board():
     herald.lock.release()
     return {'status': status, 'data': data}
 
-@app.route('/api/push', methods=['POST'])
-def push():
-    id_ = get_sess_id()
-    if not id_:
-        return {'status': False, 'str': 'haven\'t logged in'}
-    print('{} push'.format(id_))
-    res = request.get_json()
-    Herald_list['used'][id_].lock.acquire()
-    herald = Herald_list['used'][id_]
-    status, data = herald.send_cmd('push', {
-        'board': res['board'],
-        'type': res['type'],
-        'content': res['content'],
-        'aid': res['aid'],
-    })
-    herald.lock.release()
-    return {'status': status, 'data': data}
-
 @app.route('/api/get_post', methods=['POST'])
 def get_post():
     id_ = get_sess_id()
@@ -184,6 +166,42 @@ def get_posts_quick():
     status, data = herald.send_cmd('get_posts_quick', {
         'board_name': res['board_name'],
         'end_idx': res['end_idx']
+    })
+    herald.lock.release()
+    return {'status': status, 'data': data}
+
+@app.route('/api/add_push', methods=['POST'])
+def add_push():
+    id_ = get_sess_id()
+    if not id_:
+        return {'status': False, 'str': 'haven\'t logged in'}
+    print('{} add_push'.format(id_))
+    res = request.get_json()
+    Herald_list['used'][id_].lock.acquire()
+    herald = Herald_list['used'][id_]
+    status, data = herald.send_cmd('add_push', {
+        'board': res['board'],
+        'type': res['type'],
+        'content': res['content'],
+        'aid': res['aid'],
+    })
+    herald.lock.release()
+    return {'status': status, 'data': data}
+
+@app.route('/api/add_post', methods=['POST'])
+def add_post():
+    id_ = get_sess_id()
+    if not id_:
+        return {'status': False, 'str': 'haven\'t logged in'}
+    print('{} add_post'.format(id_))
+    res = request.get_json()
+    Herald_list['used'][id_].lock.acquire()
+    herald = Herald_list['used'][id_]
+    status, data = herald.send_cmd('add_post', {
+        'board': res['board'],
+        'category': res['category'],
+        'title': res['title'],
+        'content': res['content'],
     })
     herald.lock.release()
     return {'status': status, 'data': data}

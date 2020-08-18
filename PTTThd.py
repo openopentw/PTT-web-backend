@@ -159,13 +159,24 @@ class PTTThd(threading.Thread):
         self.herald.status['status'] = True
         self.herald.data['posts'] = posts
 
-    def cmd_push(self):
+    def cmd_add_push(self):
         board = self.herald.param['board']
         type_ = self.type_str_to_int[self.herald.param['type']]
         content = self.herald.param['content']
         aid = self.herald.param['aid']
         self.bot.push(board, type_, content, post_aid=aid)
         self.herald.set_status(True, '推文完成')
+
+    def cmd_add_post(self):
+        board = self.herald.param['board']
+        category = self.herald.param['category']
+        title = self.herald.param['title']
+        content = self.herald.param['content']
+        self.bot.post(board,
+                      '[{}] {}'.format(category, title),
+                      content,
+                      0, 'x')
+        self.herald.set_status(True, '發文完成')
 
     # run
 
@@ -199,8 +210,10 @@ class PTTThd(threading.Thread):
                             self.cmd_get_posts()
                         elif herald.cmd == 'get_posts_quick':
                             self.cmd_get_posts(quick=True)
-                        elif herald.cmd == 'push':
-                            self.cmd_push()
+                        elif herald.cmd == 'add_push':
+                            self.cmd_add_push()
+                        elif herald.cmd == 'add_post':
+                            self.cmd_add_post()
                         # add other PTT commands here
                         else:
                             herald.set_status(False, 'No this command')
