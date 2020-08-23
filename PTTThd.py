@@ -28,8 +28,12 @@ class PTTThd(threading.Thread):
                              query=quick)
 
         ret = []
-        for p in posts:
-            p.__dict__['push_list'] = [push.__dict__ for push in p.__dict__['push_list']]
+        for i, p in enumerate(posts):
+            if not quick:
+                p.__dict__['push_list'] = [push.__dict__ for push in p.__dict__['push_list']]
+            else:
+                p.__dict__['push_list'] = []
+            p.__dict__['index'] = beg_idx + i
             ret.append(p.__dict__)
         return ret[::-1]
 

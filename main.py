@@ -2,10 +2,11 @@ import argparse
 import atexit
 import os
 import random
+import sqlite3
 import time
 import threading
 
-from flask import Flask, jsonify, session, request, send_from_directory
+from flask import Flask, jsonify, session, request, send_from_directory, g
 # from flask_session.__init__ import Session
 
 from Herald import Herald
@@ -21,12 +22,52 @@ app.secret_key = os.urandom(32)
 # app.config['SESSION_TYPE'] = 'filesystem'
 # Session(app)
 
+DATABASE = './user.db'
+
+#######
+# args
+#######
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-p', '--port', default=8008)
     parser.add_argument('-d', '--debug', action='store_true', default=False)
     args = parser.parse_args()
     return args
+
+#######
+# sqlite3
+#######
+
+def make_dicts(cursor, row):
+    return dict((cursor.description[idx][0], value)
+		for idx, value in enumerate(row))
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(DATABASE)
+    db.row_factory = make_dicts
+    return db
+
+def query_db(query, args=(), one=False, commit=False):
+    db = get_db()
+    cur = db.execute(query, args)
+    rv = cur.fetchall()
+    cur.close()
+    if commit:
+        db.commit()
+    return (rv[0] if rv else None) if one else rv
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
+
+#######
+# session
+#######
 
 def get_sess_id():
     if 'user' not in session:
@@ -36,6 +77,10 @@ def get_sess_id():
         session.pop('user', None)
         return None
     return id_
+
+#######
+# routings
+#######
 
 @app.route('/api/user')
 def user():
@@ -79,6 +124,8 @@ def login():
     if status['status']:
         Herald_list['used'][id_] = herald
         session['user'] = id_
+        query_db('INSERT INTO Log (User, SessionId, Action, Timestamp)'
+                 ' VALUES (?, ?, ?, ?)', (res['user'], id_, 'login', time.time()), commit=True)
     else:
         Herald_list['available'].append(herald)
     herald.lock.release()
@@ -94,6 +141,8 @@ def logout():
     Herald_list['used'][id_].lock.acquire()
     herald = Herald_list['used'][id_]
     status, _ = herald.send_cmd('logout')
+    query_db('INSERT INTO Log (User, SessionId, Action, Timestamp)'
+             ' VALUES (?, ?, ?, ?)', (herald.user, id_, 'logout', time.time()), commit=True)
     herald.lock.release()
     session.pop('user', None)
     return status
