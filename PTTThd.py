@@ -1,6 +1,6 @@
 import threading
 
-from PyPtt import PTT
+from PyPtt.PyPtt import PTT
 
 class PTTThd(threading.Thread):
     def __init__(self, herald):

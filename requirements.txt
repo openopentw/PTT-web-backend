@@ -1,1 +1,6 @@
 Flask==1.1.2
+progressbar2==3.51.4
+websockets==8.1
+uao==0.1.1
+beautifulsoup4==4.9.1
+requests==2.24.0
