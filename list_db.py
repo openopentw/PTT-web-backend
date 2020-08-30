@@ -22,7 +22,9 @@ def main():
     login_list = df['SessionId'].tolist()
     df = pd.read_sql_query('SELECT SessionId FROM Log WHERE Action="logout"', con=db)
     logout_list = df['SessionId'].tolist()
-    print([id_ for id_ in login_list if id_ not in logout_list])
+    df = pd.read_sql_query('SELECT SessionId FROM Log WHERE Action="timeout"', con=db)
+    timeout_list = df['SessionId'].tolist()
+    print([id_ for id_ in login_list if id_ not in logout_list and id_ not in timeout_list])
 
 if __name__ == '__main__':
     main()

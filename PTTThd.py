@@ -218,6 +218,8 @@ class PTTThd(threading.Thread):
                             self.cmd_add_push()
                         elif herald.cmd == 'add_post':
                             self.cmd_add_post()
+                        elif herald.cmd == 'prevent_logout':
+                            self.cmd_get_fav_board()
                         # add other PTT commands here
                         else:
                             herald.set_status(False, 'No this command')
@@ -249,7 +251,9 @@ class PTTThd(threading.Thread):
                         herald.set_status(False, e_str)
                 herald.glb_list['used'].pop(herald.id, None)
                 herald.glb_list['available'].append(herald)
-                if not herald.timeout:
+                if herald.timeout:
+                    herald.sql_log(action='timeout', wapp=True)
+                else:
                     cond.notify()
             # wait for another login
             cond.wait()

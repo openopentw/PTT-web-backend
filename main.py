@@ -59,6 +59,10 @@ def query_db(query, args=(), one=False, commit=False):
         db.commit()
     return (rv[0] if rv else None) if one else rv
 
+def wapp_query_db(query, args=(), one=False, commit=False):
+    with app.app_context():
+        return query_db(query, args, one, commit)
+
 @app.teardown_appcontext
 def close_connection(exception):
     db = getattr(g, '_database', None)
@@ -105,7 +109,7 @@ def login():
     try:
         herald = Herald_list['available'].pop()
     except IndexError:
-        herald = Herald(id_, res['user'], Herald_list)
+        herald = Herald(id_, res['user'], Herald_list, query_db, wapp_query_db)
         is_new_thread = True
     herald.lock.acquire()
     herald.id = id_
@@ -118,14 +122,12 @@ def login():
         herald.cond.notify()
     herald.cond.wait()
     status = dict(herald.status)
-    herald.clear()
+    herald.sql_log()
     herald.cond.release()
 
     if status['status']:
         Herald_list['used'][id_] = herald
         session['user'] = id_
-        query_db('INSERT INTO Log (User, SessionId, Action, Timestamp)'
-                 ' VALUES (?, ?, ?, ?)', (res['user'], id_, 'login', time.time()), commit=True)
     else:
         Herald_list['available'].append(herald)
     herald.lock.release()
@@ -141,8 +143,6 @@ def logout():
     Herald_list['used'][id_].lock.acquire()
     herald = Herald_list['used'][id_]
     status, _ = herald.send_cmd('logout')
-    query_db('INSERT INTO Log (User, SessionId, Action, Timestamp)'
-             ' VALUES (?, ?, ?, ?)', (herald.user, id_, 'logout', time.time()), commit=True)
     herald.lock.release()
     session.pop('user', None)
     return status
@@ -168,6 +168,18 @@ def get_fav_board():
     Herald_list['used'][id_].lock.acquire()
     herald = Herald_list['used'][id_]
     status, data = herald.send_cmd('get_fav_board')
+    herald.lock.release()
+    return {'status': status, 'data': data}
+
+@app.route('/api/prevent_logout')
+def prevent_logout():
+    id_ = get_sess_id()
+    if not id_:
+        return {'status': False, 'str': 'haven\'t logged in'}
+    print('{} prevent_logout'.format(id_))
+    Herald_list['used'][id_].lock.acquire()
+    herald = Herald_list['used'][id_]
+    status, data = herald.send_cmd('prevent_logout')
     herald.lock.release()
     return {'status': status, 'data': data}
 
@@ -271,7 +283,7 @@ def serve(path):
 
 @atexit.register
 def logout_all():
-    pass
+    return
     print('Logging out all users ...')
     for id_ in list(Herald_list['used'].keys()):
         Herald_list['used'][id_].cond.acquire()
