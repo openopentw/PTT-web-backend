@@ -10,15 +10,21 @@
 
 DEMO 網頁：https://140.112.31.150/
 
-警告：使用這個網頁登入 PTT 之後，會從 server 端登入 PTT，所以帳號密碼必須傳送到 server 端。本人保證 server 端不會記錄使用者的密碼。或者你也可以自己 fork 來用，就不用怕被別人記錄密碼了。
+**警告：**
 
-前端的程式碼改天也會開源，等我之後整理好就開源。
+使用這個網頁登入 PTT 之後，會從 server 端登入 PTT，所以帳號密碼必須傳送到 server 端。
 
-## 安裝細節
+不過本人保證 server 端不會記錄使用者的密碼。其實我偷用密碼的話算是犯罪，可以被告的。
+
+或者你也可以自己 clone 來用，就不用怕被別人記錄密碼了。
+
+## 安裝
 
 - Python >= 3.6
-- Dependency: requirements.txt
+- dependency: requirements.txt
 - 記得 clone submodule
+- 從 (PTT-web-frontend/releases)[https://github.com/openopentw/PTT-web-frontend/releases] 下載 build 並解壓縮
+- 把 (main.py#L19)[https://github.com/openopentw/PTT-web-backend/blob/master/main.py#L19] 的 static_folder 指向 build 資料夾即可。
 
 ## 回報問題
 
