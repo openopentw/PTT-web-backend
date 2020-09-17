@@ -11,10 +11,10 @@ def make_dicts(cursor, row):
 def main():
     db = sqlite3.connect(DATABASE)
 
-    # complete log
-    print('complete log:')
-    df = pd.read_sql_query('SELECT * FROM Log', con=db)
-    print(df)
+    # # complete log
+    # print('complete log:')
+    # df = pd.read_sql_query('SELECT * FROM Log', con=db)
+    # print(df)
 
     # find current online user
     print('current user:')
@@ -25,6 +25,14 @@ def main():
     df = pd.read_sql_query('SELECT SessionId FROM Log WHERE Action="timeout"', con=db)
     timeout_list = df['SessionId'].tolist()
     print([id_ for id_ in login_list if id_ not in logout_list and id_ not in timeout_list])
+
+    # find all users
+    print('all users')
+    df = pd.read_sql_query('SELECT DISTINCT User FROM Log', con=db)
+    user_list = df['User'].tolist()
+    print(user_list)
+    print('logout_list', logout_list)
+    print('timeout', timeout_list)
 
 if __name__ == '__main__':
     main()

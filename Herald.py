@@ -1,15 +1,15 @@
+from flask import request
 import threading
 import time
 
 from PTTThd import PTTThd
 
 class Herald():
-    def __init__(self, id_, user, glb_list, query_db, wapp_query_db):
+    def __init__(self, id_, user, glb_list, query_db):
         self.id = id_
         self.user = user
         self.glb_list = glb_list
         self._query_db = query_db
-        self._wapp_query_db = wapp_query_db
 
         self.lock = threading.Lock() # only one request can use this herald at the same time
         self.cond = threading.Condition() # lock between main and thread
@@ -47,20 +47,22 @@ class Herald():
 
     # add to sql
 
-    def sql_log(self, action=None, wapp=False):
+    def sql_log(self, action=None, wapp=True):
         if self.cmd != 'prevent_logout':
             if action is None:
                 action = self.cmd
-            if wapp:
-                self._wapp_query_db('INSERT INTO Log (User, SessionId, Action, Timestamp, ReturnStatus, ReturnStatusString)'
-                                    ' VALUES (?, ?, ?, ?, ?, ?)',
-                                    (self.user, self.id, action, time.time(), self.status['status'], self.status['str']),
-                                    commit=True)
-            else:
-                self._query_db('INSERT INTO Log (User, SessionId, Action, Timestamp, ReturnStatus, ReturnStatusString)'
-                              ' VALUES (?, ?, ?, ?, ?, ?)',
-                              (self.user, self.id, action, time.time(), self.status['status'], self.status['str']),
-                              commit=True)
+            self._query_db('INSERT INTO Log (IP, UserAgent, User, SessionId, Action, Timestamp, ReturnStatus, ReturnStatusString)'
+                           ' VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                           (str(request.access_route[0]) if wapp else 'timeout',
+                            str(request.user_agent) if wapp else 'timeout',
+                            self.user,
+                            self.id,
+                            action,
+                            time.time(),
+                            self.status['status'],
+                            self.status['str']),
+                           commit=True,
+                           wapp=wapp)
 
     # set status / data (main <- thread)
 

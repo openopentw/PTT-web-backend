@@ -16,9 +16,10 @@ class PTTThd(threading.Thread):
 
     # intermediary api
 
-    def get_posts(self, board_name, end_idx, quick=False, num=30):
+    def get_posts(self, board_name, end_idx, quick=False, num=35):
         posts = []
-        beg_idx = end_idx - num + 1
+        num = max(1, min(100, num))
+        beg_idx = max(1, end_idx - num + 1)
         print(beg_idx, end_idx)
         self.bot.crawl_board(PTT.data_type.crawl_type.BBS,
                              lambda p, posts=posts: posts.append(p),
@@ -252,7 +253,7 @@ class PTTThd(threading.Thread):
                 herald.glb_list['used'].pop(herald.id, None)
                 herald.glb_list['available'].append(herald)
                 if herald.timeout:
-                    herald.sql_log(action='timeout', wapp=True)
+                    herald.sql_log(action='timeout', wapp=False)
                 else:
                     cond.notify()
             # wait for another login

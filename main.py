@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import argparse
 import atexit
 import os
@@ -7,7 +8,6 @@ import time
 import threading
 
 from flask import Flask, jsonify, session, request, send_from_directory, g
-# from flask_session.__init__ import Session
 
 from Herald import Herald
 
@@ -17,10 +17,8 @@ Herald_list = {
 }
 
 app = Flask(__name__, static_folder='../PTT-web-frontend/build')
-# app.secret_key = b'\x1e<d\x14\xbc\x1a\xb1,\x9ck/}\xb7"\xa0\x00'
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.secret_key = os.urandom(32)
-# app.config['SESSION_TYPE'] = 'filesystem'
-# Session(app)
 
 DATABASE = './user.db'
 
@@ -30,8 +28,8 @@ DATABASE = './user.db'
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--port', default=8008)
-    parser.add_argument('-d', '--debug', action='store_true', default=False)
+    parser.add_argument('--host', default='localhost')
+    parser.add_argument('-p', '--port', default=5000)
     args = parser.parse_args()
     return args
 
@@ -50,18 +48,21 @@ def get_db():
     db.row_factory = make_dicts
     return db
 
-def query_db(query, args=(), one=False, commit=False):
-    db = get_db()
+def query_db(query, args=(), one=False, commit=False, wapp=True):
+    db = None
+    if wapp:
+        db = get_db()
+    else:
+        db = sqlite3.connect(DATABASE)
+        db.row_factory = make_dicts
     cur = db.execute(query, args)
     rv = cur.fetchall()
     cur.close()
     if commit:
         db.commit()
+    if not wapp:
+        db.close()
     return (rv[0] if rv else None) if one else rv
-
-def wapp_query_db(query, args=(), one=False, commit=False):
-    with app.app_context():
-        return query_db(query, args, one, commit)
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -101,15 +102,15 @@ def login():
     print('{} login'.format(res['user']))
     id_ = '{}_{}_{}'.format(res['user'], time.time(), random.randint(0, 10000))
 
-    if 'user' in session:
-        return {'status': False, 'str': 'Already logged in other tabs.'}
+    # if 'user' in session:
+    #     return {'status': False, 'str': 'Already logged in other tabs.'}
 
     is_new_thread = False
     herald = None
     try:
         herald = Herald_list['available'].pop()
     except IndexError:
-        herald = Herald(id_, res['user'], Herald_list, query_db, wapp_query_db)
+        herald = Herald(id_, res['user'], Herald_list, query_db)
         is_new_thread = True
     herald.lock.acquire()
     herald.id = id_
@@ -262,7 +263,11 @@ def add_post():
         'board': res['board'],
         'category': res['category'],
         'title': res['title'],
-        'content': res['content'],
+        'content': ('{}\r\n\r\n'
+                    '-----\r\n'
+                    '從 https://140.112.31.150 網頁發送，來自: {}'.format(
+                        res['content'], str(request.access_route[0])
+                    )),
     })
     herald.lock.release()
     return {'status': status, 'data': data}
@@ -295,5 +300,6 @@ def logout_all():
         herald.cond.release()
 
 if __name__ == '__main__':
+    print('Executing main ...')
     args = parse_args()
-    app.run(host='0.0.0.0', port=args.port, debug=args.debug)
+    app.run(host=args.host, port=args.port)
