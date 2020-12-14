@@ -1,6 +1,7 @@
 import threading
 
-from PyPtt.PyPtt import PTT
+from PyPtt import PTT
+
 
 class PTTThd(threading.Thread):
     def __init__(self, herald):
@@ -198,7 +199,7 @@ class PTTThd(threading.Thread):
                 cond.wait()
             self.cmd_login()
             cond.notify()
-            if herald.status['status']: # if login successfully
+            if herald.status['status']:  # if login successfully
                 herald.timeout = True
                 cond.wait(self.timeout_sec)
 
