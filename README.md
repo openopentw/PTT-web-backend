@@ -22,9 +22,8 @@ DEMO 網頁：https://140.112.31.150/
 
 - Python >= 3.6
 - dependency: requirements.txt
-- 記得 clone submodule
-- 從 (PTT-web-frontend/releases)[https://github.com/openopentw/PTT-web-frontend/releases] 下載 build 並解壓縮
-- 把 (main.py#L19)[https://github.com/openopentw/PTT-web-backend/blob/master/main.py#L19] 的 static_folder 指向 build 資料夾即可。
+- 從 [PTT-web-frontend/releases](https://github.com/openopentw/PTT-web-frontend/releases) 下載 build 並解壓縮
+- 把 [main.py#L19](https://github.com/openopentw/PTT-web-backend/blob/master/main.py#L19) 的 static\_folder 指向 build 資料夾即可。
 
 ## 回報問題
 
