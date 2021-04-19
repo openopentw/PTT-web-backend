@@ -18,7 +18,7 @@ DEMO 影片：https://youtu.be/c4JDuU\_OIR0
 
 不過本人保證 server 端不會記錄使用者的密碼。其實我偷用密碼的話算是犯罪，可以被告的。
 
-或者你也可以自己 clone 來用，就不用怕被別人記錄密碼了。
+或者你也可以自己 clone 來用，或是用下面的相關連結提到的本地 app，就不用怕被別人記錄密碼了。
 
 ## 安裝
 
@@ -27,10 +27,11 @@ DEMO 影片：https://youtu.be/c4JDuU\_OIR0
 - 從 [PTT-web-frontend/releases](https://github.com/openopentw/PTT-web-frontend/releases) 下載 build 並解壓縮
 - 執行 main.py 時，讓 `--static` 的參數指向上述的這個 build 資料夾即可。
 
-## 主要的 denpendency
+## 相關連結
 
-- 本 repo 基於 [PttCodingMan/PyPtt](https://github.com/PttCodingMan/PyPtt) 來連接 PTT，這是一個很好用的套件，也一直有在更新，歡迎各位前往使用。
+- 本 repo 是基於 [PttCodingMan/PyPtt](https://github.com/PttCodingMan/PyPtt) 來連接 PTT，這是一個很好用的套件，也一直有在更新，推薦各位前往使用。
+- 基於這個 repo 做的本地 app：https://github.com/openopentw/PTT-app ，可以在本地登入使用，就不用連到我的 server 了。
 
 ## 回報問題
 
-- 有問題歡迎開 issue 回報/詢問。但我還是學生，有時候很忙，不一定能馬上回覆或實作，請見諒！
+有問題歡迎開 issue 回報/詢問。但我還是學生，有時候很忙，不一定能馬上回覆或實作，請見諒！
