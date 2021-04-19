@@ -2,7 +2,6 @@ import threading
 
 from PyPtt import PTT
 
-
 class PTTThd(threading.Thread):
     def __init__(self, herald):
         super(PTTThd, self).__init__(daemon=True)

@@ -4,10 +4,12 @@ import atexit
 import os
 import random
 import sqlite3
-import time
+import sys
 import threading
+import time
 
 from flask import Flask, jsonify, session, request, send_from_directory, g
+from pathlib import Path
 
 from Herald import Herald
 
@@ -15,12 +17,6 @@ Herald_list = {
     'used': {},
     'available': [],
 }
-
-app = Flask(__name__, static_folder='../PTT-web-frontend/build')
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.secret_key = os.urandom(32)
-
-DATABASE = './user.db'
 
 #######
 # args
@@ -30,8 +26,17 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--host', default='localhost')
     parser.add_argument('-p', '--port', default=5000)
+    parser.add_argument('--static', default='./frontend_build')
+    parser.add_argument('--database', default='./user.db')
+    parser.add_argument('-r', '--redirect_out_err', default=False, action='store_true')
     args = parser.parse_args()
     return args
+
+ARGS = parse_args()
+
+app = Flask(__name__, static_folder=ARGS.static)
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.secret_key = os.urandom(32)
 
 #######
 # sqlite3
@@ -42,27 +47,29 @@ def make_dicts(cursor, row):
 		for idx, value in enumerate(row))
 
 def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-    db.row_factory = make_dicts
-    return db
+    if ARGS.database:
+        db = getattr(g, '_database', None)
+        if db is None:
+            db = g._database = sqlite3.connect(ARGS.database)
+        db.row_factory = make_dicts
+        return db
 
 def query_db(query, args=(), one=False, commit=False, wapp=True):
-    db = None
-    if wapp:
-        db = get_db()
-    else:
-        db = sqlite3.connect(DATABASE)
-        db.row_factory = make_dicts
-    cur = db.execute(query, args)
-    rv = cur.fetchall()
-    cur.close()
-    if commit:
-        db.commit()
-    if not wapp:
-        db.close()
-    return (rv[0] if rv else None) if one else rv
+    if ARGS.database:
+        db = None
+        if wapp:
+            db = get_db()
+        else:
+            db = sqlite3.connect(ARGS.database)
+            db.row_factory = make_dicts
+        cur = db.execute(query, args)
+        rv = cur.fetchall()
+        cur.close()
+        if commit:
+            db.commit()
+        if not wapp:
+            db.close()
+        return (rv[0] if rv else None) if one else rv
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -250,27 +257,27 @@ def add_push():
     herald.lock.release()
     return {'status': status, 'data': data}
 
-@app.route('/api/add_post', methods=['POST'])
-def add_post():
-    id_ = get_sess_id()
-    if not id_:
-        return {'status': False, 'str': 'haven\'t logged in'}
-    print('{} add_post'.format(id_))
-    res = request.get_json()
-    Herald_list['used'][id_].lock.acquire()
-    herald = Herald_list['used'][id_]
-    status, data = herald.send_cmd('add_post', {
-        'board': res['board'],
-        'category': res['category'],
-        'title': res['title'],
-        'content': ('{}\r\n\r\n'
-                    '-----\r\n'
-                    '從 https://140.112.31.150 網頁發送，來自: {}'.format(
-                        res['content'], str(request.access_route[0])
-                    )),
-    })
-    herald.lock.release()
-    return {'status': status, 'data': data}
+# @app.route('/api/add_post', methods=['POST'])
+# def add_post():
+#     id_ = get_sess_id()
+#     if not id_:
+#         return {'status': False, 'str': 'haven\'t logged in'}
+#     print('{} add_post'.format(id_))
+#     res = request.get_json()
+#     Herald_list['used'][id_].lock.acquire()
+#     herald = Herald_list['used'][id_]
+#     status, data = herald.send_cmd('add_post', {
+#         'board': res['board'],
+#         'category': res['category'],
+#         'title': res['title'],
+#         'content': ('{}\r\n\r\n'
+#                     '-----\r\n'
+#                     '從 https://140.112.31.150 網頁發送，來自: {}'.format(
+#                         res['content'], str(request.access_route[0])
+#                     )),
+#     })
+#     herald.lock.release()
+#     return {'status': status, 'data': data}
 
 @app.route('/api')
 def api():
@@ -301,5 +308,8 @@ def logout_all():
 
 if __name__ == '__main__':
     print('Executing main ...')
-    args = parse_args()
-    app.run(host=args.host, port=args.port)
+    if ARGS.redirect_out_err:
+        cur_path = Path(__file__)
+        sys.stdout = open(cur_path.parent / ARGS.static / 'stdout.log', 'w')
+        sys.stderr = open(cur_path.parent / ARGS.static / 'stderr.log', 'w')
+    app.run(host=ARGS.host, port=ARGS.port)

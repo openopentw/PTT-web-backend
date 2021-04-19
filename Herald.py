@@ -1,6 +1,7 @@
-from flask import request
 import threading
 import time
+
+from flask import request
 
 from PTTThd import PTTThd
 

@@ -4,13 +4,13 @@
 
 支援多人 non-blocking 登入使用。每 60 秒會踢掉沒有動作的 user。
 
-支援 PTT 的功能有：登入/登出、抓我的最愛、抓看板文章列表、抓文章內文、推文、發文。
+支援 PTT 的功能有：登入/登出、抓我的最愛、抓看板文章列表、抓文章內文、推文。
 
 ## DEMO
 
 DEMO 網頁：https://140.112.31.150/
 
-DEMO 影片：https://youtu.be/c4JDuU_OIR0
+DEMO 影片：https://youtu.be/c4JDuU\_OIR0
 
 **警告：**
 
@@ -25,9 +25,12 @@ DEMO 影片：https://youtu.be/c4JDuU_OIR0
 - Python >= 3.6
 - dependency: requirements.txt
 - 從 [PTT-web-frontend/releases](https://github.com/openopentw/PTT-web-frontend/releases) 下載 build 並解壓縮
-- 把 [main.py#L19](https://github.com/openopentw/PTT-web-backend/blob/master/main.py#L19) 的 static\_folder 指向 build 資料夾即可。
+- 執行 main.py 時，讓 `--static` 的參數指向上述的這個 build 資料夾即可。
+
+## 主要的 denpendency
+
+- 本 repo 基於 [PttCodingMan/PyPtt](https://github.com/PttCodingMan/PyPtt) 來連接 PTT，這是一個很好用的套件，也一直有在更新，歡迎各位前往使用。
 
 ## 回報問題
 
-- 本 repo 基於 https://github.com/PttCodingMan/PyPtt 來連接 PTT，因此與連接 PTT 相關的問題可以前往詢問
-- 其它的問題歡迎開 issue 回報/詢問
+- 有問題歡迎開 issue 回報/詢問。但我還是學生，有時候很忙，不一定能馬上回覆或實作，請見諒！
